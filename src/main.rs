@@ -21,8 +21,8 @@ fn main() {
         input = String::new();
         stdin.read_line(&mut input).unwrap();
     }
-    if let Ok(cmd) = check_exists(&input, &known_commands) {
-        println!("{}", cmd.join(" "));
+    if let Ok(_cmd) = check_exists(&input, &known_commands) {
+        //println!("{}", cmd.join(" "));
     }
 }
 fn check_exists<'a>(
