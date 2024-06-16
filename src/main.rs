@@ -13,6 +13,7 @@ fn main() {
     known_commands.push("exit");
     known_commands.push("echo");
     known_commands.push("type");
+    known_commands.push("pwd");
 
     let mut input = reset();
     loop {
@@ -26,16 +27,18 @@ fn main() {
                 } else {
                     eprintln!("{}", e);
                 }
-
-                input = reset();
             }
             Ok(mut cmd) => match cmd.pop_front().unwrap() {
                 "echo" => {
                     println!("{}", cmd.make_contiguous().join(" "));
-                    input = reset();
                 }
                 "exit" => {
                     std::process::exit(0);
+                }
+                "pwd" => { 
+                    if let Ok(workdir) = pwd_builtin(){
+                        println!("{}", workdir.to_string_lossy());
+                    }
                 }
                 "type" => {
                     let querycmd = cmd.pop_front().unwrap();
@@ -50,13 +53,13 @@ fn main() {
                             Err(_) => eprintln!("{}: not found", querycmd),
                         }
                     }
-                    input = reset();
                 }
                 _ => {
-                    input = reset();
+                    
                 }
             },
         }
+        input = reset();
     }
 }
 fn check_exists<'a>(
@@ -66,9 +69,6 @@ fn check_exists<'a>(
     let mut input = user_input.split_whitespace().collect::<VecDeque<&str>>();
     let cmd = input.pop_front().unwrap();
     let mut params = input.clone();
-    //if !known_commands.contains(&cmd) {
-    //    return Err((cmd,format!("{}: command not found", cmd)));
-    //}
     let mut cmd_params = VecDeque::new();
     cmd_params.push_front(cmd);
     cmd_params.append(&mut params);
@@ -108,4 +108,8 @@ fn execute_simple(fullpath: &Path, params: &VecDeque<&str>) {
         .args(params)
         .status()
         .expect("failed to execute child");
+}
+
+fn pwd_builtin()->io::Result<PathBuf>{
+    env::current_dir()
 }
