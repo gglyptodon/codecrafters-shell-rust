@@ -22,9 +22,9 @@ fn main() {
         input = String::new();
         stdin.read_line(&mut input).unwrap();
     }
-    if let Ok(cmd) = check_exists(&input, &known_commands) {
-        match cmd.first().unwrap(){
-            &"echo" => println!("{}", cmd.join(" ")),
+    if let Ok(mut cmd) = check_exists(&input, &known_commands) {
+        match cmd.pop_front().unwrap(){
+            "echo" => println!("{}", cmd.make_contiguous().join(" ")),
             _ => {}
         }
     }
@@ -32,15 +32,15 @@ fn main() {
 fn check_exists<'a>(
     user_input: &'a str,
     known_commands: &Vec<&str>,
-) -> Result<Vec<&'a str>, String> {
+) -> Result<VecDeque<&'a str>, String> {
     let mut input = user_input.split_whitespace().collect::<VecDeque<&str>>();
     let cmd = input.pop_front().unwrap();
-    let mut params = Vec::from(input.clone());
+    let mut params = input.clone();
     if !known_commands.contains(&cmd) {
         return Err(format!("{}: command not found", cmd));
     }
-    let mut cmd_params = Vec::new();
-    cmd_params.push(cmd);
+    let mut cmd_params = VecDeque::new();
+    cmd_params.push_front(cmd);
     cmd_params.append(&mut params);
     Ok(cmd_params)
 }
