@@ -31,11 +31,14 @@ fn main() {
                 }
                 "type" => {
                     let querycmd = cmd.pop_front().unwrap();
-                    let query = search_paths(&path, querycmd);
-                    //let query = check_exists(querycmd, &known_commands);
-                    match query {
-                        Ok(p) => println!("{} is {}", querycmd, p.to_string_lossy()), //is a shell builtin", querycmd),
-                        Err(_) => eprintln!("{}: not found", querycmd),
+                    if let Ok(_) = check_exists(querycmd, &known_commands) {
+                        println!("{} is a shell builtin", querycmd);
+                    } else {
+                        let query = search_paths(&path, querycmd);
+                        match query {
+                            Ok(p) => println!("{} is {}", querycmd, p.to_string_lossy()), //is a shell builtin", querycmd),
+                            Err(_) => eprintln!("{}: not found", querycmd),
+                        }
                     }
                     input = reset();
                 }
