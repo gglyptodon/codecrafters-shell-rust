@@ -1,8 +1,13 @@
-use std::collections::VecDeque;
+use std::env;
+use std::ffi::OsStr;
 #[allow(unused_imports)]
 use std::io::{self, Write};
+use std::path;
+use std::{collections::VecDeque, path::PathBuf};
 
 fn main() {
+    let path = env::var_os("PATH").unwrap();
+
     let mut known_commands: Vec<&str> = Vec::new();
     known_commands.push("exit");
     known_commands.push("echo");
@@ -26,10 +31,11 @@ fn main() {
                 }
                 "type" => {
                     let querycmd = cmd.pop_front().unwrap();
-                    let query = check_exists(querycmd, &known_commands);
+                    let query = search_paths(&path, querycmd);
+                    //let query = check_exists(querycmd, &known_commands);
                     match query {
-                        Ok(_) => println!("{} is a shell builtin", querycmd),
-                        Err(_) => eprintln!("{}: not found", querycmd)
+                        Ok(p) => println!("{} is {}", querycmd, p.to_string_lossy()), //is a shell builtin", querycmd),
+                        Err(_) => eprintln!("{}: not found", querycmd),
                     }
                     input = reset();
                 }
@@ -54,6 +60,21 @@ fn check_exists<'a>(
     cmd_params.push_front(cmd);
     cmd_params.append(&mut params);
     Ok(cmd_params)
+}
+fn search_paths(path: &OsStr, cmd: &str) -> Result<PathBuf, ()> {
+    let paths = env::split_paths(&path);
+    let mut found = paths.filter_map(|path: path::PathBuf| {
+        let to_check = path.join(cmd);
+        if to_check.is_file() {
+            Some(to_check)
+        } else {
+            None
+        }
+    });
+    if let Some(p) = found.next() {
+        return Ok(p.to_path_buf());
+    }
+    Err(())
 }
 
 fn reset() -> String {
