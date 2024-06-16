@@ -29,7 +29,7 @@ fn main() {
                     let query = check_exists(querycmd, &known_commands);
                     match query {
                         Ok(_) => println!("{} is a shell builtin", querycmd),
-                        Err(e) => eprintln!("{}", e),
+                        Err(_) => eprintln!("{}: not found", querycmd)
                     }
                     input = reset();
                 }
