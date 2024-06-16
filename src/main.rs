@@ -2,7 +2,8 @@ use std::env;
 use std::ffi::OsStr;
 #[allow(unused_imports)]
 use std::io::{self, Write};
-use std::path;
+use std::path::{self, Path};
+use std::process::{Command, Stdio};
 use std::{collections::VecDeque, path::PathBuf};
 
 fn main() {
@@ -17,8 +18,15 @@ fn main() {
     loop {
         let commands = check_exists(&input, &known_commands);
         match commands {
-            Err(e) => {
-                eprintln!("{}", e);
+            Err((mut cmd_with_params, e)) => {
+                // was not a builtin, try finding in path
+
+                if let Ok(fullpath) = search_paths(&path, cmd_with_params.pop_front().unwrap()) {
+                    execute_simple(&fullpath, &cmd_with_params);
+                } else {
+                    eprintln!("{}", e);
+                }
+
                 input = reset();
             }
             Ok(mut cmd) => match cmd.pop_front().unwrap() {
@@ -36,7 +44,9 @@ fn main() {
                     } else {
                         let query = search_paths(&path, querycmd);
                         match query {
-                            Ok(p) => println!("{} is {}", querycmd, p.to_string_lossy()), //is a shell builtin", querycmd),
+                            Ok(p) => {
+                                println!("{} is {}", querycmd, p.to_string_lossy());
+                            }
                             Err(_) => eprintln!("{}: not found", querycmd),
                         }
                     }
@@ -52,16 +62,19 @@ fn main() {
 fn check_exists<'a>(
     user_input: &'a str,
     known_commands: &Vec<&str>,
-) -> Result<VecDeque<&'a str>, String> {
+) -> Result<VecDeque<&'a str>, (VecDeque<&'a str>, String)> {
     let mut input = user_input.split_whitespace().collect::<VecDeque<&str>>();
     let cmd = input.pop_front().unwrap();
     let mut params = input.clone();
-    if !known_commands.contains(&cmd) {
-        return Err(format!("{}: command not found", cmd));
-    }
+    //if !known_commands.contains(&cmd) {
+    //    return Err((cmd,format!("{}: command not found", cmd)));
+    //}
     let mut cmd_params = VecDeque::new();
     cmd_params.push_front(cmd);
     cmd_params.append(&mut params);
+    if !known_commands.contains(&cmd) {
+        return Err((cmd_params, format!("{}: command not found", cmd)));
+    }
     Ok(cmd_params)
 }
 fn search_paths(path: &OsStr, cmd: &str) -> Result<PathBuf, ()> {
@@ -88,4 +101,11 @@ fn reset() -> String {
     let mut input = String::new();
     stdin.read_line(&mut input).unwrap();
     input
+}
+
+fn execute_simple(fullpath: &Path, params: &VecDeque<&str>) {
+    let _child = Command::new(fullpath)
+        .args(params)
+        .status()
+        .expect("failed to execute child");
 }
