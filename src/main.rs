@@ -29,7 +29,7 @@ fn check_exists<'a>(
     user_input: &'a str,
     known_commands: &Vec<&str>,
 ) -> Result<Vec<&'a str>, String> {
-    let mut input = user_input.split_whitespace().collect::<VecDeque<&str>>();
+    let mut input = user_input.trim().split_whitespace().collect::<VecDeque<&str>>();
     let cmd = input.pop_front().unwrap();
     let mut params = Vec::from(input.clone());
     if !known_commands.contains(&cmd) {
