@@ -3,7 +3,7 @@ use std::ffi::OsStr;
 #[allow(unused_imports)]
 use std::io::{self, Write};
 use std::path::{self, Path};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::{collections::VecDeque, path::PathBuf};
 
 fn main() {
