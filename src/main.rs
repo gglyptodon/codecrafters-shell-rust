@@ -6,6 +6,7 @@ fn main() {
     let mut known_commands: Vec<&str> = Vec::new();
     known_commands.push("exit");
     known_commands.push("echo");
+    known_commands.push("type");
 
     let mut input = reset();
     loop {
@@ -20,9 +21,17 @@ fn main() {
                     println!("{}", cmd.make_contiguous().join(" "));
                     input = reset();
                 }
-
                 "exit" => {
                     std::process::exit(0);
+                }
+                "type" => {
+                    let querycmd = cmd.pop_front().unwrap();
+                    let query = check_exists(querycmd, &known_commands);
+                    match query {
+                        Ok(_) => println!("{} is a shell builtin", querycmd),
+                        Err(e) => eprintln!("{}", e),
+                    }
+                    input = reset();
                 }
                 _ => {
                     input = reset();
