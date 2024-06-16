@@ -7,25 +7,27 @@ fn main() {
     known_commands.push("exit");
     known_commands.push("echo");
 
-    print!("$ ");
-    io::stdout().flush().unwrap();
+    let mut input = reset();
+    loop {
+        let commands = check_exists(&input, &known_commands);
+        match commands {
+            Err(e) => {
+                eprintln!("{}", e);
+                input = reset();
+            }
+            Ok(mut cmd) => match cmd.pop_front().unwrap() {
+                "echo" => {
+                    println!("{}", cmd.make_contiguous().join(" "));
+                    input = reset();
+                }
 
-    // Wait for user input
-    let stdin = io::stdin();
-    let mut input = String::new();
-    stdin.read_line(&mut input).unwrap();
-
-    while let Err(e) = check_exists(&input, &known_commands) {
-        eprintln!("{}", e);
-        print!("$ ");
-        io::stdout().flush().unwrap();
-        input = String::new();
-        stdin.read_line(&mut input).unwrap();
-    }
-    if let Ok(mut cmd) = check_exists(&input, &known_commands) {
-        match cmd.pop_front().unwrap(){
-            "echo" => println!("{}", cmd.make_contiguous().join(" ")),
-            _ => {}
+                "exit" => {
+                    std::process::exit(0);
+                }
+                _ => {
+                    input = reset();
+                }
+            },
         }
     }
 }
@@ -43,4 +45,14 @@ fn check_exists<'a>(
     cmd_params.push_front(cmd);
     cmd_params.append(&mut params);
     Ok(cmd_params)
+}
+
+fn reset() -> String {
+    print!("$ ");
+    io::stdout().flush().unwrap();
+    // Wait for user input
+    let stdin = io::stdin();
+    let mut input = String::new();
+    stdin.read_line(&mut input).unwrap();
+    input
 }
