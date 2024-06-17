@@ -28,19 +28,19 @@ fn main() {
                     eprintln!("{}", e);
                 }
             }
-            Ok(mut cmd) => match cmd.pop_front().unwrap() {
-                "echo" => {
+            Ok(mut cmd) => match cmd.pop_front() {
+                Some("echo") => {
                     println!("{}", cmd.make_contiguous().join(" "));
                 }
-                "exit" => {
+                Some("exit") => {
                     std::process::exit(0);
                 }
-                "pwd" => { 
-                    if let Ok(workdir) = pwd_builtin(){
+                Some("pwd") => {
+                    if let Ok(workdir) = pwd_builtin() {
                         println!("{}", workdir.to_string_lossy());
                     }
                 }
-                "type" => {
+                Some("type") => {
                     let querycmd = cmd.pop_front().unwrap();
                     if let Ok(_) = check_exists(querycmd, &known_commands) {
                         println!("{} is a shell builtin", querycmd);
@@ -54,9 +54,7 @@ fn main() {
                         }
                     }
                 }
-                _ => {
-                    
-                }
+                _ => {}
             },
         }
         input = reset();
@@ -67,15 +65,21 @@ fn check_exists<'a>(
     known_commands: &Vec<&str>,
 ) -> Result<VecDeque<&'a str>, (VecDeque<&'a str>, String)> {
     let mut input = user_input.split_whitespace().collect::<VecDeque<&str>>();
-    let cmd = input.pop_front().unwrap();
-    let mut params = input.clone();
-    let mut cmd_params = VecDeque::new();
-    cmd_params.push_front(cmd);
-    cmd_params.append(&mut params);
-    if !known_commands.contains(&cmd) {
-        return Err((cmd_params, format!("{}: command not found", cmd)));
+    let cmd = input.pop_front();
+    match cmd {
+        Some(cmd) => {
+            let mut params = input.clone();
+            let mut cmd_params = VecDeque::new();
+            cmd_params.push_front(cmd);
+            cmd_params.append(&mut params);
+            if !known_commands.contains(&cmd) {
+                return Err((cmd_params, format!("{}: command not found", cmd)));
+            }
+
+            return Ok(cmd_params);
+        }
+        None => Ok(VecDeque::new()),
     }
-    Ok(cmd_params)
 }
 fn search_paths(path: &OsStr, cmd: &str) -> Result<PathBuf, ()> {
     let paths = env::split_paths(&path);
@@ -110,6 +114,6 @@ fn execute_simple(fullpath: &Path, params: &VecDeque<&str>) {
         .expect("failed to execute child");
 }
 
-fn pwd_builtin()->io::Result<PathBuf>{
+fn pwd_builtin() -> io::Result<PathBuf> {
     env::current_dir()
 }
