@@ -127,5 +127,10 @@ fn pwd_builtin() -> io::Result<PathBuf> {
     env::current_dir()
 }
 fn cd_builtin(path: &Path) -> io::Result<()> {
+    if let Some(p) = path.to_str() {
+        if p == "~" {
+            return env::set_current_dir(env::var("HOME").unwrap());
+        }
+    }
     env::set_current_dir(path)
 }
