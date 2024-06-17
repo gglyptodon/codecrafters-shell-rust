@@ -14,6 +14,7 @@ fn main() {
     known_commands.push("echo");
     known_commands.push("type");
     known_commands.push("pwd");
+    known_commands.push("cd");
 
     let mut input = reset();
     loop {
@@ -54,6 +55,14 @@ fn main() {
                         }
                     }
                 }
+                Some("cd") => match cmd.pop_front() {
+                    Some(new_path) => {
+                        if let Err(_) = cd_builtin(Path::new(new_path)) {
+                            println!("cd: {}: No such file or directory", new_path)
+                        }
+                    }
+                    None => {}
+                },
                 _ => {}
             },
         }
@@ -116,4 +125,7 @@ fn execute_simple(fullpath: &Path, params: &VecDeque<&str>) {
 
 fn pwd_builtin() -> io::Result<PathBuf> {
     env::current_dir()
+}
+fn cd_builtin(path: &Path) -> io::Result<()> {
+    env::set_current_dir(path)
 }
